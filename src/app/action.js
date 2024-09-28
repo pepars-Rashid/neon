@@ -1,12 +1,14 @@
 'use server';
 
-import { createUser } from "@/database/queries/insert";
+import { db } from "@/database/db"
+import { usersTable } from "@/database/schema"
 
 export const handleCreateUser = async () => {
+    
     const fakeUser = {
         name: 'John Doe',
-    };
-    
-    await createUser(fakeUser);
+    }
+
+    await db.insert(usersTable).values(fakeUser)  
 };
 
