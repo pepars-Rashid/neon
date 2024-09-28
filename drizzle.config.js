@@ -5,7 +5,7 @@ dotenv.config({ path: '.env.local' });
 
 export default defineConfig({
   schema: "./src/database/schema.js",
-  out: "./public/migrations",
+  out: "./src/migrations",
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.NEON_DATABASE_URL,
