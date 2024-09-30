@@ -1,10 +1,11 @@
 "use client"
 import { handleCreateUser } from "@/app/action" 
+import { myQuries } from "@/app/action";
 
 export default function Button() {
   
   const handleClick = async () => {
-    await handleCreateUser();
+    await myQuries();
   };
 
   return (

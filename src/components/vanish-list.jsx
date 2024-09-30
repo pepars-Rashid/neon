@@ -1,36 +1,22 @@
 "use client"
 import { AnimatePresence, useAnimate, usePresence } from "framer-motion";
+import { useFormState } from "react-dom";
 import React, { useEffect, useState } from "react";
 import { FiClock, FiPlus, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { getAllTasks, insertTodo } from "@/app/action";
 
 export const VanishList = () => {
-  const [todos, setTodos] = useState([
-    {
-      id: 1,
-      text: "Take out trash",
-      checked: false,
-      time: "5 mins",
-    },
-    {
-      id: 2,
-      text: "Do laundry",
-      checked: false,
-      time: "10 mins",
-    },
-    {
-      id: 3,
-      text: "Have existential crisis",
-      checked: true,
-      time: "12 hrs",
-    },
-    {
-      id: 4,
-      text: "Get dog food",
-      checked: false,
-      time: "1 hrs",
-    },
-  ]);
+  const [todos, setTodos] = useState( [] );
+
+  useEffect(() => {
+    async function fetchTasks() {
+      const tasks = await getAllTasks();
+      setTodos(tasks);
+    }
+
+    fetchTasks();
+  }, []);
 
   const handleCheck = (id) => {
     setTodos((pv) =>
@@ -57,7 +43,7 @@ export const VanishList = () => {
           handleCheck={handleCheck}
         />
       </div>
-      <Form setTodos={setTodos} />
+      <Form todos={todos} setTodos={setTodos} />
     </section>
   );
 };
@@ -71,31 +57,43 @@ const Header = () => {
   );
 };
 
-const Form = ({ setTodos }) => {
+const Form = ({todos ,setTodos }) => {
+  const [addState, addAction] = useFormState(insertTodo, { message: "" });
   const [visible, setVisible] = useState(false);
 
   const [time, setTime] = useState(15);
   const [text, setText] = useState("");
   const [unit, setUnit] = useState("mins");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!text.length) {
       return;
     }
 
     setTodos((pv) => [
       {
-        id: Math.random(),
+        id: todos.length +1,
         text,
         checked: false,
         time: `${time} ${unit}`,
       },
       ...pv,
     ]);
-
+    
     setTime(15);
     setText("");
     setUnit("mins");
+
+    const formData = new FormData();
+  formData.append("text", text);
+  formData.append("number", time);
+  formData.append("unit", unit);
+
+  
+  // here we could do the pendding as u want it
+  // Call the server-side action
+  await addAction(formData);
+  // here we could do what should be done after pending, and catching errs if there is
   };
 
   return (
@@ -103,6 +101,7 @@ const Form = ({ setTodos }) => {
       <AnimatePresence>
         {visible && (
           <motion.form
+            
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 25 }}
@@ -113,6 +112,7 @@ const Form = ({ setTodos }) => {
             className="mb-6 w-full rounded border border-zinc-700 bg-zinc-900 p-3"
           >
             <textarea
+              name="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="What do you need to do?"
@@ -121,20 +121,26 @@ const Form = ({ setTodos }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <input
+                  name="number"
                   type="number"
                   className="w-24 rounded bg-zinc-700 px-1.5 py-1 text-sm text-zinc-50 focus:outline-0"
                   value={time}
                   onChange={(e) => setTime(parseInt(e.target.value))}
                 />
                 <button
+                  name="unit" //minute
                   type="button"
-                  onClick={() => setUnit("mins")}
+                  value={unit}
+                  onClick={() => {setUnit("mins")
+                  }}
                   className={`rounded px-1.5 py-1 text-xs ${unit === "mins" ? "bg-white text-zinc-950" : "bg-zinc-300/20 text-zinc-300 transition-colors hover:bg-zinc-600 hover:text-zinc-200"}`}
                 >
                   mins
                 </button>
                 <button
+                  name="hrs"
                   type="button"
+                  value={unit}
                   onClick={() => setUnit("hrs")}
                   className={`rounded px-1.5 py-1 text-xs ${unit === "hrs" ? "bg-white text-zinc-950" : "bg-zinc-300/20 text-zinc-300 transition-colors hover:bg-zinc-600 hover:text-zinc-200"}`}
                 >
