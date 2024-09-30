@@ -59,7 +59,19 @@ export const getAllTasks= async () => {
         const unit = data.get("unit")
         const time = `${number} ${unit}`
         
-        await db.insert(tasksTable).values({text , time})
-
-        
+        await db.insert(tasksTable).values({text , time})     
 }
+
+    export const deleteRow = async (id) =>{
+        await db.delete(tasksTable)
+        .where(eq(tasksTable.id, id));
+    }
+
+    export const updateCheckbox = async (id) =>{
+        const task = await db.select().from(tasksTable).where(eq(tasksTable.id, id)).then(rows => rows[0]);
+        const checked = task.checked;
+
+        await db.update(tasksTable)
+    .set({ checked: !checked })
+    .where(eq(tasksTable.id, id));
+    }

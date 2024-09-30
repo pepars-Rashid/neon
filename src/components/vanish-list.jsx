@@ -4,7 +4,7 @@ import { useFormState } from "react-dom";
 import React, { useEffect, useState } from "react";
 import { FiClock, FiPlus, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { getAllTasks, insertTodo } from "@/app/action";
+import { getAllTasks, insertTodo, deleteRow, updateCheckbox } from "@/app/action";
 
 export const VanishList = () => {
   const [todos, setTodos] = useState( [] );
@@ -18,13 +18,18 @@ export const VanishList = () => {
     fetchTasks();
   }, []);
 
-  const handleCheck = (id) => {
+  const handleCheck = async (id) => {
+    
     setTodos((pv) =>
       pv.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t))
     );
+    // update checkbox
+    await updateCheckbox(id)
   };
 
-  const removeElement = (id) => {
+  const removeElement = async (id) => {
+    //pendding
+    await deleteRow(id);
     setTodos((pv) => pv.filter((t) => t.id !== id));
   };
 
