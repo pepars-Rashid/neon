@@ -13,9 +13,12 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.5",
+    "dexie": "^4.0.8",
+    "dexie-react-hooks": "^1.1.7",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.33.0",
     "framer-motion": "^11.8.0",
+    "localforage": "^1.10.0",
     "next": "14.2.13",
     "pg": "^8.13.0",
     "react": "^18",

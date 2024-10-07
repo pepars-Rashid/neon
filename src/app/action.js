@@ -49,17 +49,21 @@ export const myQuries = async () =>{
 }
 
 export const getAllTasks= async () => {
-    const tasks = await db.select().from(tasksTable).execute();
+    const tasks = await db.select().from(tasksTable);
     return tasks;
   }
 
     export const insertTodo = async (preState, data) => {
+        try{
         const text = data.get("text")
         const number = data.get("number")
         const unit = data.get("unit")
         const time = `${number} ${unit}`
         
-        await db.insert(tasksTable).values({text , time})     
+        await db.insert(tasksTable).values({text , time}) 
+        } catch(err){
+            return {err}
+        }    
 }
 
     export const deleteRow = async (id) =>{
@@ -74,4 +78,13 @@ export const getAllTasks= async () => {
         await db.update(tasksTable)
     .set({ checked: !checked })
     .where(eq(tasksTable.id, id));
+    }
+
+    export const editText = async (preState, data) =>{
+        const id = data.get("id")
+        const newText = data.get("text")
+
+        await db.update(tasksTable)
+        .set({text: newText})
+        .where(eq(tasksTable.id, id))
     }

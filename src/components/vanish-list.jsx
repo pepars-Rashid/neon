@@ -4,18 +4,34 @@ import { useFormState } from "react-dom";
 import React, { useEffect, useState } from "react";
 import { FiClock, FiPlus, FiTrash2 } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { getAllTasks, insertTodo, deleteRow, updateCheckbox } from "@/app/action";
+import { getAllTasks, insertTodo, deleteRow, updateCheckbox, editText } from "@/app/action";
+import { text } from "drizzle-orm/mysql-core";
+import localforage from 'localforage';
+import useOnlineStatus from "./useOnlineStatus";
+
+const queueAction = async (action, data) => {
+  let queue = await localforage.getItem('actionQueue') || [];
+  queue.push({ action, data });
+  await localforage.setItem('actionQueue', queue);
+};
 
 export const VanishList = () => {
+  const [addState, addAction] = useFormState(editText, { message: "" });
   const [todos, setTodos] = useState( [] );
 
   useEffect(() => {
-    async function fetchTasks() {
-      const tasks = await getAllTasks();
-      setTodos(tasks);
-    }
 
+    async function fetchTasks() {
+      try{
+      const tasks = await getAllTasks();
+      setTodos(tasks)
+      }
+      catch(err){
+        console.error("err: ", err)
+      }
+    }
     fetchTasks();
+
   }, []);
 
   const handleCheck = async (id) => {
@@ -24,12 +40,45 @@ export const VanishList = () => {
       pv.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t))
     );
     // update checkbox
-    await updateCheckbox(id)
+
+    try{
+      await updateCheckbox(id)
+    } catch(err){
+      console.err("err: ", err)
+      await queueAction('updateCheckbox')
+    }
+
+  };
+
+  const handleEdit = async (id, text) => {
+    
+    setTodos((pv) =>
+      pv.map((t) => (t.id === id ? { ...t, text: text } : t))
+    );
+
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("text", text);
+
+    // update checkbox
+    try{
+      await addAction(formData)
+    } catch(err){
+      console.err("err: ", err)
+      await queueAction('editText', formData)
+    }
+    
   };
 
   const removeElement = async (id) => {
     //pendding
-    await deleteRow(id);
+    try{
+      await deleteRow(id);
+    } catch(err){
+      console.err("err: ", err)
+      await queueAction('deleteRow')
+    }
+    
     setTodos((pv) => pv.filter((t) => t.id !== id));
   };
 
@@ -46,6 +95,7 @@ export const VanishList = () => {
           removeElement={removeElement}
           todos={todos}
           handleCheck={handleCheck}
+          handleEdit = {handleEdit}
         />
       </div>
       <Form todos={todos} setTodos={setTodos} />
@@ -77,7 +127,8 @@ const Form = ({todos ,setTodos }) => {
 
     setTodos((pv) => [
       {
-        id: todos.length +1,
+        // id: todos.length +1,
+        id: Math.max(...todos.map(todo => todo.id))+1,
         text,
         checked: false,
         time: `${time} ${unit}`,
@@ -97,7 +148,13 @@ const Form = ({todos ,setTodos }) => {
   
   // here we could do the pendding as u want it
   // Call the server-side action
-  await addAction(formData);
+  try{
+    await addAction(formData);
+    } catch(err){
+      console.err("err: ", err)
+      await queueAction('insertTodo')
+    }
+  
   // here we could do what should be done after pending, and catching errs if there is
   };
 
@@ -174,7 +231,7 @@ const Form = ({todos ,setTodos }) => {
   );
 };
 
-const Todos = ({ todos, handleCheck, removeElement }) => {
+const Todos = ({ todos, handleCheck, removeElement, handleEdit }) => {
   return (
     <div className="w-full space-y-3">
       <AnimatePresence>
@@ -182,6 +239,7 @@ const Todos = ({ todos, handleCheck, removeElement }) => {
           <Todo
             handleCheck={handleCheck}
             removeElement={removeElement}
+            handleEdit={handleEdit}
             id={t.id}
             key={t.id}
             checked={t.checked}
@@ -195,9 +253,16 @@ const Todos = ({ todos, handleCheck, removeElement }) => {
   );
 };
 
-const Todo = ({ removeElement, handleCheck, id, children, checked, time }) => {
+const Todo = ({ removeElement, handleCheck, handleEdit ,id, children, checked, time }) => {
   const [isPresent, safeToRemove] = usePresence();
   const [scope, animate] = useAnimate();
+  const [isFormVisible, setFormVisible] = useState(false);
+  const [text, setText] = useState('')
+
+  const handleButtonClick = (e) => {
+    e.preventDefault()
+    setFormVisible(!isFormVisible);
+};
 
   useEffect(() => {
     if (!isPresent) {
@@ -258,7 +323,36 @@ const Todo = ({ removeElement, handleCheck, id, children, checked, time }) => {
       >
         {children}
       </p>
-      <div className="ml-auto flex gap-1.5">
+      <div className="ml-auto flex gap-[12px]">
+        <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleEdit(id, text);
+        }}
+        className="flex justify-between w-full">
+          <button 
+          onClick={handleButtonClick}
+          name="id" 
+          value={id} className="text-white border-2 rounded-[3px] p-1">
+            {isFormVisible ? 'cancel' : 'Edit task'}
+          </button>
+           {/* !!!!!! */}
+          {isFormVisible && (
+                      <div>
+                      <label>
+                          New task:
+                          <textarea
+                            name="text"
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            placeholder="What is the new task?"
+                            className="h-[44px] w-full resize-none rounded bg-zinc-900 p-3 text-sm text-zinc-50 placeholder-zinc-500 caret-zinc-50 focus:outline-0"
+                          />
+                      </label>
+                      <button className="text-white border-2 rounded-[3px] p-1" type="submit" name="id" value={id}>Submit</button>
+                      </div>
+            )}
+        </form>
         <div className="flex items-center gap-1.5 whitespace-nowrap rounded bg-zinc-800 px-1.5 py-1 text-xs text-zinc-400">
           <FiClock />
           <span>{time}</span>
@@ -273,3 +367,49 @@ const Todo = ({ removeElement, handleCheck, id, children, checked, time }) => {
     </motion.div>
   );
 };
+
+const syncActions = async () => {
+  console.log("!!!")
+  let queue = await localforage.getItem('actionQueue') || [];
+  if(queue.length >= 1){}
+  else{
+  for (let item of queue) {
+    try {
+      switch (item.action) {
+        case 'insertTodo':
+            console.log("insertTodo!!!")
+            await insertTodo(item.data)
+            break;
+        case 'updateCheckbox':
+          console.log("updateCheck box!!!")
+          await updateCheckbox(item.data);
+          break;
+        case 'editText':
+          console.log("editText")
+          await editText(item.data);
+          break;
+        case 'deleteRow':
+          console.log("delete row !!!")
+          await deleteRow(item.data);
+          break;
+        // Add more cases as needed
+      }
+      // Remove successfully processed action from queue
+      queue = queue.filter(q => q !== item);
+      await localforage.setItem('actionQueue', queue);
+    } catch (err) {
+      console.error('Error syncing action:', err);
+      break; // Exit loop if there's an error
+    }
+  }
+}
+};
+
+// Call syncActions periodically or on network status change
+
+
+
+setInterval(async () =>{
+  await syncActions()
+  }
+  , 1 *5000); // Retry
