@@ -11,3 +11,10 @@ export const tasksTable = pgTable('tasks', {
   checked: boolean('checked').notNull().default(false),
   time: text('time').notNull(),
 });
+
+export const testTable = pgTable('dexieTable', {
+  id: serial('id').primaryKey(),
+  text: text('text').notNull(),
+  checked: boolean('checked').notNull().default(false),
+  time: text('time').notNull(),
+});

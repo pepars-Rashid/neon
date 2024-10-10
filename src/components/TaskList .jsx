@@ -1,10 +1,19 @@
 "use client"
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/database/localDB'; // Ensure this path is correct
+import { localDB } from '@/database/localDB'; // Ensure this path is correct
+import { getAllTasksTest } from '@/app/action';
 
 export default function TaskList({onDeleteTask}) {
-    const tasks = useLiveQuery(() => db.tasks.toArray(), []);
+    const tasks = useLiveQuery(() => localDB.tasks.toArray(), []);
+    
+//     async()=> {try{
+//         await getAllTasksTest()
+//     }
+//     catch (err){
+        
+//     }
+// }
 
     const handleDelete = (id)=>{
         const intId = parseInt(id, 10)
@@ -28,6 +37,9 @@ export default function TaskList({onDeleteTask}) {
                         className='border-[1px] border-gray-800 bg-red-600 p-[2px]'>
                         Delete 🗑
                     </button>
+                    <div className='border-[1px] border-yellow-300 p-[2px]'>
+                        {task.isPending ? 'Pending...' : 'Done' }
+                    </div>
                 </li>
             ))}
         </ul>

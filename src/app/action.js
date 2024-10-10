@@ -1,7 +1,7 @@
 'use server';
 import { eq } from 'drizzle-orm';
 import { db } from "@/database/db"
-import { usersTable, tasksTable } from "@/database/schema"
+import { usersTable, tasksTable, testTable } from "@/database/schema"
 
 export const handleCreateUser = async () => {
     
@@ -48,10 +48,17 @@ export const myQuries = async () =>{
 
 }
 
+export const getAllTasksTest= async () => {
+    const tasks = await db.select().from(testTable);
+    return tasks;
+}
+
 export const getAllTasks= async () => {
     const tasks = await db.select().from(tasksTable);
     return tasks;
-  }
+}
+
+
 
     export const insertTodo = async (preState, data) => {
         try{
@@ -88,3 +95,7 @@ export const getAllTasks= async () => {
         .set({text: newText})
         .where(eq(tasksTable.id, id))
     }
+
+    export const insertTask = async (task) => {
+            await db.insert(testTable).values(task) 
+}

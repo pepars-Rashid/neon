@@ -15,6 +15,13 @@
       "when": 1727623757179,
       "tag": "0001_known_peter_quill",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1728511080962,
+      "tag": "0002_silent_swordsman",
+      "breakpoints": true
     }
   ]
 }
