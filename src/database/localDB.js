@@ -2,7 +2,7 @@ import Dexie from "dexie";
 const localDB = new Dexie('MyDatabase');
 
 	// Declare tables, IDs and indexes
-	db.version(2).stores({
+	localDB.version(2).stores({
     tasks: '++id, text, checked, time, isPending',
     ququeTasks: 'id, text, checked, time, action' 
 }).upgrade(tx => {
